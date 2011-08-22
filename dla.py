@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-import pylab 
+from pylab import *
 
 # constants
 twopi = 2 * np.pi
@@ -45,19 +45,15 @@ def setLattice(pos):
 # end of setLattice
 
 
-L = 50              # lattice goes from -L : L
+L = 20              # lattice goes from -L : L
 size = 2 * L + 1    # so total lattice with is 2L + 1
 
 # preallocate and initialise centre point as "seed"
 lattice = np.zeros((size, size), dtype=np.int8)
 lattice[L, L] = 1
 
-
-radius = 30             # starting radius for walkers
+radius = 15             # starting radius for walkers
 numParticles = 10000    # how many walkers to release
-
-startsX = []
-startsY = []
 
 for particle in range(0, numParticles):
 
@@ -68,10 +64,10 @@ for particle in range(0, numParticles):
     x = round(pos.real * radius)
     y = round(pos.imag * radius)
 
+    initPos = [x, y]
+
     pos = [x, y]
-    startsX.append(pos[0])
-    startsY.append(pos[1])
-    print "particle:", particle, "initial pos:", pos
+    #print "particle:", particle, "initial pos:", pos
 
     #import pdb; pdb.set_trace()
 
@@ -93,9 +89,10 @@ for particle in range(0, numParticles):
 
         #print moveDir, stepLength, stepInc
 
-        for step in range(0, stepLength):
+        for step in range(0, abs(stepLength)):
 
-            #print "step:", step, pos, nnOccupied(pos), inCircle(pos)
+            #print "step:", step, pos, nnOccupied(pos), inCircle(pos), \
+                #"dir",moveDir,"sl",stepLength, stepInc,
             # stop if neighouring site is occupied
             if nnOccupied(pos):
                 setLattice(pos)
@@ -109,6 +106,9 @@ for particle in range(0, numParticles):
                 pos[moveDir] += stepInc
         #print "pos:",pos
 
-pylab.pcolor(lattice)
-pylab.show()
+xaxis = arange(-L,L+1)
+yaxis = arange(-L,L+1)
+pcolormesh(xaxis, yaxis, lattice)
+show()
+
 print lattice
