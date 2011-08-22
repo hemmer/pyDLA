@@ -6,12 +6,16 @@ from pylab import *
 # constants
 twopi = 2 * np.pi
 
-hits = 0
+hits = 0                    # how many seeds have stuck
 birthradius = 5             # starting radius for walkers
 deathradius = 10            # radius to kill off walkers
 maxradius = -1              # the extent of the growth
-numParticles = 1000      # how many walkers to release
+numParticles = 2000         # how many walkers to release
 
+L = 2000                    # lattice goes from -L : L
+size = (2 * L) + 1          # so total lattice with is 2L + 1
+
+#np.random.seed(42)          # seed for debugging
 
 # returns whether site pos = (x, y) has
 # an occupied nearest-neighbour site
@@ -59,22 +63,17 @@ def registerHit(pos):
 # end of registerHit
 
 
-L = 200             # lattice goes from -L : L
-size = 2 * L + 1    # so total lattice with is 2L + 1
-
 # preallocate and initialise centre point as "seed"
 lattice = np.zeros((size, size), dtype=np.int32)
 lattice[L, L] = 1
 
-
-for particle in range(0, numParticles):
+for particle in range(numParticles):
 
     # find angle on [0, 2pi)
-    pos = np.exp(1j * np.random.rand() * twopi)
-    # and convert to a starting position
-    x = int(pos.real * birthradius)
-    y = int(pos.imag * birthradius)
-    pos = [x, y]
+    angle = np.random.rand() * twopi
+    # and convert to a starting position, pos = (x, y),
+    # on a circle of radius "birthradius" around the centre seed
+    pos = [int(np.sin(angle) * birthradius), int(np.cos(angle) * birthradius)]
 
     isDead = False      # walker starts off alive
 
@@ -93,28 +92,28 @@ for particle in range(0, numParticles):
         # vertically - 1
         moveDir = np.random.randint(2)
 
-        for step in range(0, abs(stepLength)):
+        for step in range(abs(stepLength)):
 
             #print "step:", step, pos, nnOccupied(pos), inCircle(pos), \
                 #"dir",moveDir,"sl",stepLength, stepInc,
             # stop if neighouring site is occupied
-            if nnOccupied(pos):
+            if not inCircle(pos):
+                isDead = True
+                break
+            elif nnOccupied(pos):
                 registerHit(pos)
                 isDead = True
                 break
-            elif not inCircle(pos):
-                isDead = True
-                break
             else:
-                # move the walker
-                pos[moveDir] += stepInc
-        #print "pos:",pos
+                pos[moveDir] += stepInc     # move the walker
 
 # select only the interesting parts
-#M = maxradius
-#grph = L - M, L + M
+M = maxradius
+grph = L - M, L + M
 
-#xaxis = arange(-M, M + 1)
-#yaxis = arange(-M, M + 1)
-#pcolormesh(xaxis, yaxis, lattice[grph[0]:grph[1], grph[0]:grph[1]])
-#show()
+# and plot
+xaxis = arange(-M, M + 1)
+yaxis = arange(-M, M + 1)
+pcolormesh(xaxis, yaxis, lattice[grph[0]:grph[1], grph[0]:grph[1]])
+axes().set_aspect('equal', 'datalim')
+show()
