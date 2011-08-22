@@ -6,6 +6,12 @@ from pylab import *
 # constants
 twopi = 2 * np.pi
 
+hits = 0
+birthradius = 5             # starting radius for walkers
+deathradius = 10            # radius to kill off walkers
+maxradius = -1              # the extent of the growth
+numParticles = 1000      # how many walkers to release
+
 
 # returns whether site pos = (x, y) has
 # an occupied nearest-neighbour site
@@ -16,12 +22,11 @@ def nnOccupied(pos):
     ytemp = pos[1] + L
 
     # periodic BCs
-    xn = (xtemp - 1) % size, (xtemp + 1) % size
-    yn = (ytemp - 1) % size, (ytemp + 1) % size
+    xn = (xtemp - 1), (xtemp + 1)
+    yn = (ytemp - 1), (ytemp + 1)
 
     if lattice[xtemp, yn[0]] != 0 or lattice[xtemp, yn[1]] != 0 or \
         lattice[xn[0], ytemp] != 0  or lattice[xn[1], ytemp] != 0:
-
         return True
     else:
         return False
@@ -31,45 +36,45 @@ def nnOccupied(pos):
 # check if a point is within the
 # allowed radius
 def inCircle(pos):
-    if np.sqrt(pos[0] ** 2 + pos[1] ** 2) > radius:
+    if (pos[0] ** 2 + pos[1] ** 2) > deathradius ** 2:  # faster than sqrt
         return False
     else:
         return True
 # end of inCircle
 
 
-# converts coordinates relative
-# to lattice centre
-def setLattice(pos):
-    lattice[pos[0] + L, pos[1] + L] = 1
-# end of setLattice
+# registers an extension on the seed
+def registerHit(pos):
+    global hits, birthradius, deathradius, maxradius
+
+    # check if this "hit" extends the max radius
+    norm2 = (pos[0] ** 2 + pos[1] ** 2)
+    if norm2 > maxradius ** 2:
+        maxradius = int(sqrt(norm2))
+        birthradius = maxradius + 5 if (maxradius + 5) < L else L
+        deathradius = maxradius + 20 if (maxradius + 20) < L else L
+
+    hits += 1
+    lattice[pos[0] + L, pos[1] + L] = hits
+# end of registerHit
 
 
-L = 20              # lattice goes from -L : L
+L = 200             # lattice goes from -L : L
 size = 2 * L + 1    # so total lattice with is 2L + 1
 
 # preallocate and initialise centre point as "seed"
-lattice = np.zeros((size, size), dtype=np.int8)
+lattice = np.zeros((size, size), dtype=np.int32)
 lattice[L, L] = 1
 
-radius = 15             # starting radius for walkers
-numParticles = 10000    # how many walkers to release
 
 for particle in range(0, numParticles):
-
 
     # find angle on [0, 2pi)
     pos = np.exp(1j * np.random.rand() * twopi)
     # and convert to a starting position
-    x = round(pos.real * radius)
-    y = round(pos.imag * radius)
-
-    initPos = [x, y]
-
+    x = int(pos.real * birthradius)
+    y = int(pos.imag * birthradius)
     pos = [x, y]
-    #print "particle:", particle, "initial pos:", pos
-
-    #import pdb; pdb.set_trace()
 
     isDead = False      # walker starts off alive
 
@@ -79,7 +84,8 @@ for particle in range(0, numParticles):
         # on [-inf,+inf] and round, ignoring zero
         # length steps
         stepLength = int(round(np.random.randn()))
-        if stepLength == 0: continue
+        if stepLength == 0:
+            continue
         stepInc = cmp(stepLength, 0)
 
         # decide whether to move
@@ -87,15 +93,13 @@ for particle in range(0, numParticles):
         # vertically - 1
         moveDir = np.random.randint(2)
 
-        #print moveDir, stepLength, stepInc
-
         for step in range(0, abs(stepLength)):
 
             #print "step:", step, pos, nnOccupied(pos), inCircle(pos), \
                 #"dir",moveDir,"sl",stepLength, stepInc,
             # stop if neighouring site is occupied
             if nnOccupied(pos):
-                setLattice(pos)
+                registerHit(pos)
                 isDead = True
                 break
             elif not inCircle(pos):
@@ -106,9 +110,11 @@ for particle in range(0, numParticles):
                 pos[moveDir] += stepInc
         #print "pos:",pos
 
-xaxis = arange(-L,L+1)
-yaxis = arange(-L,L+1)
-pcolormesh(xaxis, yaxis, lattice)
-show()
+# select only the interesting parts
+#M = maxradius
+#grph = L - M, L + M
 
-print lattice
+#xaxis = arange(-M, M + 1)
+#yaxis = arange(-M, M + 1)
+#pcolormesh(xaxis, yaxis, lattice[grph[0]:grph[1], grph[0]:grph[1]])
+#show()
