@@ -18,4 +18,4 @@ Examples
 --------
 
 ![Crystal Growing](/hemmer/pyDLA/raw/master/img/n20000.png) . 
-![Crystal Growing around a box](/hemmer/pyDLA/raw/master/img/n20000.png)
+![Crystal Growing around a box](/hemmer/pyDLA/raw/master/img/n20000box.png)
