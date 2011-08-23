@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
 import time
-from math import pi, sqrt, cos, sin
 from random import choice, random, seed
 
 from pylab import pcolormesh, axes, show
-from numpy import array, zeros, int32, arange
+import numpy as np
 
-twopi = 2 * pi              # 2 pi for choosing starting position
+twopi = 2 * np.pi              # 2 pi for choosing starting position
 
 hits = 0                    # how many seeds have stuck
 birthradius = 5             # starting radius for walkers
@@ -20,13 +19,13 @@ L = 500                     # lattice goes from -L : L
 size = (2 * L) + 1          # so total lattice width is 2L + 1
 
 # preallocate and initialise centre point as "seed"
-lattice = zeros((size, size), dtype=int32)
+lattice = np.zeros((size, size), dtype=np.int32)
 lattice[L, L] = -1
 
 # possible (relative) nearest neighbour sites
-nnsteps = ((0, 1), (0, -1), (1, 0), (-1, 0))
+nnsteps = np.array(((0, 1), (0, -1), (1, 0), (-1, 0)))
 # account for lattice zero not being array zero
-nnstepsLattice = array(nnsteps) + L
+nnstepsLattice = nnsteps + L
 
 
 # returns whether site pos = (x, y) has
@@ -48,7 +47,7 @@ def nnOccupied(pos):
 # allowed radius
 def inCircle(pos):
     #print "circ", pos, pos[0], deathradius
-    if sum(pos ** 2) > deathradius ** 2:  # faster than sqrt
+    if np.sum(pos ** 2) > deathradius ** 2:  # faster than sqrt
         return False
     else:
         return True
@@ -60,9 +59,9 @@ def registerHit(pos):
     global hits, birthradius, deathradius, maxradius
 
     # check if this "hit" extends the max radius
-    norm2 = sum(pos ** 2)
+    norm2 = np.sum(pos ** 2)
     if norm2 > maxradius ** 2:
-        maxradius = int(sqrt(norm2))
+        maxradius = int(np.sqrt(norm2))
         birthradius = maxradius + 5 if (maxradius + 5) < L else L
         deathradius = maxradius + 20 if (maxradius + 20) < L else L
 
@@ -83,16 +82,16 @@ for particle in xrange(numParticles):
     angle = random() * twopi
     # and convert to a starting position, pos = (x, y),
     # on a circle of radius "birthradius" around the centre seed
-    pos = array((int(sin(angle) * birthradius), int(cos(angle) * birthradius)))
+    pos = np.array((int(np.sin(angle) * birthradius), int(np.cos(angle) * birthradius)))
 
     isDead = False      # walker starts off alive
 
     while not isDead:
 
-        # pick one of the nearest neighbour sites to explore
-        moveDir = choice(nnsteps)
+        # pick one of the 4 nearest neighbour sites to explore
+        randMove = np.random.randint(0, 4)
         # and apply the selected move to position coordinate, pos
-        pos += moveDir
+        pos += nnsteps[randMove]
 
         if not inCircle(pos):
             isDead = True
