@@ -1,21 +1,28 @@
 #!/usr/bin/env python
 
-import numpy as np
-from pylab import *
+from math import pi, sqrt, cos, sin
+from random import choice, random, seed
+import time
+
+from pylab import pcolormesh, axes, show
+from numpy import zeros, int32, arange
 
 # constants
-twopi = 2 * np.pi
+twopi = 2 * pi
 
 hits = 0                    # how many seeds have stuck
 birthradius = 5             # starting radius for walkers
 deathradius = 10            # radius to kill off walkers
 maxradius = -1              # the extent of the growth
-numParticles = 2000         # how many walkers to release
+numParticles = 10000        # how many walkers to release
 
 L = 2000                    # lattice goes from -L : L
-size = (2 * L) + 1          # so total lattice with is 2L + 1
+size = (2 * L) + 1          # so total lattice width is 2L + 1
 
-#np.random.seed(42)          # seed for debugging
+# possible nearest neighbour sites
+nnsteps = ((0, 1), (0, -1), (1, 0), (-1, 0))
+
+#seed(42)          # seed for debugging
 
 # returns whether site pos = (x, y) has
 # an occupied nearest-neighbour site
@@ -64,48 +71,42 @@ def registerHit(pos):
 
 
 # preallocate and initialise centre point as "seed"
-lattice = np.zeros((size, size), dtype=np.int32)
+lattice = zeros((size, size), dtype=int32)
 lattice[L, L] = 1
+
+starttime = time.time()
 
 for particle in range(numParticles):
 
+    print particle
+
     # find angle on [0, 2pi)
-    angle = np.random.rand() * twopi
+    angle = random() * twopi
     # and convert to a starting position, pos = (x, y),
     # on a circle of radius "birthradius" around the centre seed
-    pos = [int(np.sin(angle) * birthradius), int(np.cos(angle) * birthradius)]
+    pos = [int(sin(angle) * birthradius), int(cos(angle) * birthradius)]
 
     isDead = False      # walker starts off alive
 
     while not isDead:
 
-        # pick a gaussian distributed step-length
-        # on [-inf,+inf] and round, ignoring zero
-        # length steps
-        stepLength = int(round(np.random.randn()))
-        if stepLength == 0:
-            continue
-        stepInc = cmp(stepLength, 0)
+        # pick one of the nearest neighbour sites to explore
+        moveDir = choice(nnsteps)
+        # and apply the selected move to position coordinate, pos
+        pos[0] += moveDir[0]
+        pos[1] += moveDir[1]
 
-        # decide whether to move
-        # horizontally - 0
-        # vertically - 1
-        moveDir = np.random.randint(2)
+        if not inCircle(pos):
+            isDead = True
+            break
+        elif nnOccupied(pos):
+            registerHit(pos)
+            isDead = True
+            break
 
-        for step in range(abs(stepLength)):
 
-            #print "step:", step, pos, nnOccupied(pos), inCircle(pos), \
-                #"dir",moveDir,"sl",stepLength, stepInc,
-            # stop if neighouring site is occupied
-            if not inCircle(pos):
-                isDead = True
-                break
-            elif nnOccupied(pos):
-                registerHit(pos)
-                isDead = True
-                break
-            else:
-                pos[moveDir] += stepInc     # move the walker
+endtime = time.time()
+print "Ran in time", (endtime - starttime)
 
 # select only the interesting parts
 M = maxradius
