@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+import time
 from math import pi, sqrt, cos, sin
 from random import choice, random, seed
-import time
 
 from pylab import pcolormesh, axes, show
 from numpy import zeros, int32, arange
@@ -13,11 +13,15 @@ hits = 0                    # how many seeds have stuck
 birthradius = 5             # starting radius for walkers
 deathradius = 10            # radius to kill off walkers
 maxradius = -1              # the extent of the growth
-numParticles = 2000         # how many walkers to release
+numParticles = 20000        # how many walkers to release
 #seed(42)                    # seed for debugging
 
-L = 2000                    # lattice goes from -L : L
+L = 1000                    # lattice goes from -L : L
 size = (2 * L) + 1          # so total lattice width is 2L + 1
+
+# preallocate and initialise centre point as "seed"
+lattice = zeros((size, size), dtype=int32)
+lattice[L, L] = -1
 
 # possible nearest neighbour sites
 nnsteps = ((0, 1), (0, -1), (1, 0), (-1, 0))
@@ -64,10 +68,6 @@ def registerHit(pos):
 # end of registerHit
 
 
-# preallocate and initialise centre point as "seed"
-lattice = zeros((size, size), dtype=int32)
-lattice[L, L] = -1
-
 starttime = time.time()
 
 for particle in range(numParticles):
@@ -100,15 +100,15 @@ for particle in range(numParticles):
 
 
 endtime = time.time()
-print "Ran in time", (endtime - starttime)
+print "Ran in time:", (endtime - starttime)
+print "Maximum radius:", maxradius
 
 # select only the interesting parts
 M = maxradius
 grph = L - M, L + M
 
 # and plot
-xaxis = arange(-M, M + 1)
-yaxis = arange(-M, M + 1)
-pcolormesh(xaxis, yaxis, lattice[grph[0]:grph[1], grph[0]:grph[1]])
+axis = arange(-M, M + 1)
+pcolormesh(axis, axis, lattice[grph[0]:grph[1], grph[0]:grph[1]])
 axes().set_aspect('equal', 'datalim')
 show()
