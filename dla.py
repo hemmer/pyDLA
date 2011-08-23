@@ -7,14 +7,14 @@ import time
 from pylab import pcolormesh, axes, show
 from numpy import zeros, int32, arange
 
-# constants
-twopi = 2 * pi
+twopi = 2 * pi              # 2 pi for choosing starting position
 
 hits = 0                    # how many seeds have stuck
 birthradius = 5             # starting radius for walkers
 deathradius = 10            # radius to kill off walkers
 maxradius = -1              # the extent of the growth
-numParticles = 10000        # how many walkers to release
+numParticles = 2000         # how many walkers to release
+#seed(42)                    # seed for debugging
 
 L = 2000                    # lattice goes from -L : L
 size = (2 * L) + 1          # so total lattice width is 2L + 1
@@ -22,23 +22,17 @@ size = (2 * L) + 1          # so total lattice width is 2L + 1
 # possible nearest neighbour sites
 nnsteps = ((0, 1), (0, -1), (1, 0), (-1, 0))
 
-#seed(42)          # seed for debugging
 
 # returns whether site pos = (x, y) has
 # an occupied nearest-neighbour site
 def nnOccupied(pos):
 
-    # convert for lattice to array coords
-    xtemp = pos[0] + L
-    ytemp = pos[1] + L
+    # convert from lattice coords to array coords
+    latticepos = (pos[0] + L, pos[1] + L)
 
-    # periodic BCs
-    xn = (xtemp - 1), (xtemp + 1)
-    yn = (ytemp - 1), (ytemp + 1)
-
-    if lattice[xtemp, yn[0]] != 0 or lattice[xtemp, yn[1]] != 0 or \
-        lattice[xn[0], ytemp] != 0  or lattice[xn[1], ytemp] != 0:
-        return True
+    for step in nnsteps:
+        if lattice[latticepos[0] + step[0], latticepos[1] + step[1]] != 0:
+            return True
     else:
         return False
 # end of nnOccupied
@@ -72,13 +66,13 @@ def registerHit(pos):
 
 # preallocate and initialise centre point as "seed"
 lattice = zeros((size, size), dtype=int32)
-lattice[L, L] = 1
+lattice[L, L] = -1
 
 starttime = time.time()
 
 for particle in range(numParticles):
 
-    print particle
+    #print particle
 
     # find angle on [0, 2pi)
     angle = random() * twopi
