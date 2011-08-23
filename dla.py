@@ -13,17 +13,17 @@ hits = 0                    # how many seeds have stuck
 birthradius = 5             # starting radius for walkers
 deathradius = 10            # radius to kill off walkers
 maxradius = -1              # the extent of the growth
-numParticles = 20000        # how many walkers to release
+numParticles = 10000        # how many walkers to release
 #seed(42)                    # seed for debugging
 
-L = 1000                    # lattice goes from -L : L
+L = 500                     # lattice goes from -L : L
 size = (2 * L) + 1          # so total lattice width is 2L + 1
 
 # preallocate and initialise centre point as "seed"
 lattice = zeros((size, size), dtype=int32)
 lattice[L, L] = -1
 
-# possible nearest neighbour sites
+# possible (relative) nearest neighbour sites
 nnsteps = ((0, 1), (0, -1), (1, 0), (-1, 0))
 
 
@@ -69,8 +69,9 @@ def registerHit(pos):
 
 
 starttime = time.time()
+print "Running", numParticles, "particles..."
 
-for particle in range(numParticles):
+for particle in xrange(numParticles):
 
     #print particle
 
