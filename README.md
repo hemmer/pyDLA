@@ -17,5 +17,5 @@ This script requires the `numpy` and `matplotlib` libraries to run. To install t
 Examples
 --------
 
-![Crystal Growing](/hemmer/pyDLA/raw/master/img/n20000.png) . 
-![Crystal Growing around a box](/hemmer/pyDLA/raw/master/img/n20000box.png)
+![Crystal Growing](/hemmer/pyDLA/raw/master/img/n50000.png) . 
+![Crystal Growing around a box](/hemmer/pyDLA/raw/master/img/n20000.png)
