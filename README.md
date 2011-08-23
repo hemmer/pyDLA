@@ -1,8 +1,12 @@
 Diffusion-Limited Aggregation
 =============================
 
-Simple project to investigate Diffusion-Limited Aggregation (and teach me python). To run, make sure 
-your system meets the requirements and enter:
+Simple project to investigate Diffusion-Limited Aggregation (and teach me python). To run, first download the script:
+
+    $ git clone git://github.com/hemmer/pyDLA.git
+    $ cd pyDLA
+
+First make sure your system meets the requirements, then to run enter:
 
     $ ./dla.py
         
