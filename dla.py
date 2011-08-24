@@ -86,9 +86,7 @@ class dla(object):
             pos = [int(sin(angle) * self.birthradius), \
                 int(cos(angle) * self.birthradius)]
 
-            isDead = False      # walker starts off alive
-
-            while not isDead:
+            while True:
 
                 # pick one of the nearest neighbour sites to explore
                 moveDir = choice(self.nnsteps)
@@ -97,11 +95,9 @@ class dla(object):
                 pos[1] += moveDir[1]
 
                 if not self.inCircle(pos):
-                    isDead = True
                     break
                 elif self.nnOccupied(pos):
                     self.registerHit(pos)
-                    isDead = True
                     break
         endtime = time.time()
         print "Ran in time:", (endtime - starttime)
@@ -122,6 +118,6 @@ class dla(object):
         show()
 
 # run the main program
-model = dla(5000)
+model = dla(1000)
 model.main()
 model.plotLattice()
