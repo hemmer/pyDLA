@@ -36,7 +36,7 @@ class dla(object):
 
         # convert from lattice coords to array coords
         for step in self.nnstepsLattice:
-            if self.lattice[pos[0] + step[0], pos[1] + step[1]] != 0:
+            if self.lattice[pos[0] + step[0], pos[1] + step[1]]:
                 return True
         else:
             return False
@@ -118,6 +118,6 @@ class dla(object):
         show()
 
 # run the main program
-model = dla(1000)
+model = dla(5000)
 model.main()
 model.plotLattice()
