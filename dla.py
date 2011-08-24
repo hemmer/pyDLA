@@ -1,123 +1,118 @@
 #!/usr/bin/env python
-
 import time
-from math import pi, sqrt, cos, sin
-from random import choice, random, seed
 
 from pylab import pcolormesh, axes, show
-from numpy import zeros, int32, arange
+import numpy as np
 
+L = 2000                    # lattice goes from -L : L
+SIZE = (2 * L) + 1          # so total lattice width is 2L + 1
+NNSTEPS = np.array([
+    (0, 1), 
+    (0, -1), 
+    (1, 0), 
+    (-1, 0)
+])
+CHUNK_SIZE = 1000
 
-class dla(object):
+class Simulation(object):
+    def __init__(self, num_particles):
+        self.hits = 0
+        self.birthradius = 5
+        self.deathradius = 10
+        self.maxradius = -1
 
-    def __init__(self, numParticles, L=500):
-        self.L = L              # lattice goes from -L : L
-        size = (2 * L) + 1      # so total lattice width is 2L + 1
-        self.numParticles = numParticles    # how many walkers to release
-
-        self.hits = 0                       # how many seeds have stuck
-        self.birthradius = 5                # starting radius for walkers
-        self.deathradius = 10               # radius to kill off walkers
-        self.maxradius = -1                 # the extent of the growth
-        seed(42)                    # seed for debugging
-
-        # preallocate and initialise centre point as "seed"
-        self.lattice = zeros((size, size), dtype=int32)
+        self.lattice = np.zeros((SIZE, SIZE), dtype=np.int32)
         self.lattice[L, L] = -1
+        # initialize center point as the seed
 
-        # possible (relative) nearest neighbour sites
-        self.nnsteps = ((0, 1), (0, -1), (1, 0), (-1, 0))
-        # possible (absolute) nearest neighbour sites
-        self.nnstepsLattice = ((L, L + 1), (L, L - 1), (L + 1, L), (L - 1, L))
+        self.hit_zone = np.zeros((SIZE, SIZE), dtype=bool)
+        self.hit_zone[L, L] = True
+        self.hit_zone[ NNSTEPS[:,0] + L, NNSTEPS[:,1] + L ] = True
+        # the hit_zone is all of the position next to places that have
+        # actually hit, these count as hits
 
-    # returns whether site pos = (x, y) has
-    # an occupied nearest-neighbour site
-    def nnOccupied(self, pos):
+        self.num_particles = num_particles
 
-        # convert from lattice coords to array coords
-        for step in self.nnstepsLattice:
-            if self.lattice[pos[0] + step[0], pos[1] + step[1]] != 0:
-                return True
-        else:
-            return False
-    # end of nnOccupied
-
-    # check if a point is within the
-    # allowed radius
-    def inCircle(self, pos):
-        # faster than sqrt
-        if (pos[0] ** 2 + pos[1] ** 2) > self.deathradius ** 2:
-            return False
-        else:
-            return True
-    # end of inCircle
-
-    # registers an extension on the seed
-    def registerHit(self, pos):
+    def register_hit(self, pos):
+        neighbors = NNSTEPS + pos
+        self.hit_zone[neighbors[:,0], neighbors[:,1]] = True
+        # update hit_zone
 
         # check if this "hit" extends the max radius
-        norm2 = (pos[0] ** 2 + pos[1] ** 2)
+        norm2 = (pos[0] - L)**2 + (pos[1] - L)**2
         if norm2 > self.maxradius ** 2:
-            self.maxradius = int(sqrt(norm2))
-
-            self.birthradius = self.maxradius + 5 \
-                if (self.maxradius + 5) < self.L else self.L
-            self.deathradius = self.maxradius + 20 \
-                if (self.maxradius + 20) < self.L else self.L
+            self.maxradius = int(np.sqrt(norm2))
+            self.birthradius = min(self.maxradius + 5, L)
+            self.deathradius = min(self.maxradius + 20, L)
 
         self.hits += 1
-        self.lattice[pos[0] + self.L, pos[1] + self.L] = self.hits
-    # end of registerHit
+        self.lattice[pos] = self.hits
 
-    # main logic loop
-    def main(self):
 
-        starttime = time.time()
-        print "Running", self.numParticles, "particles..."
+    def run(self):
 
-        # 2*pi for choosing starting position
-        twopi = 2 * pi
-        for particle in xrange(self.numParticles):
+        # predetermine starting angles for all 
+        # particles on [0, 2pi)
+        angles = np.random.rand(self.num_particles) * 2 * np.pi
 
-            # find angle on [0, 2pi)
-            angle = random() * twopi
+        for particle in xrange(self.num_particles):
             # and convert to a starting position, pos = (x, y),
             # on a circle of radius "birthradius" around the centre seed
-            pos = [int(sin(angle) * self.birthradius), \
-                int(cos(angle) * self.birthradius)]
+            pos = (np.sin(angles[particle]) * self.birthradius + L,\
+                    np.cos(angles[particle]) * self.birthradius + L)
 
             while True:
+                # generate CHUNK_SIZE different moves from [0,3]
+                moves = np.random.randint(0, 4, CHUNK_SIZE)
+                # perform a cumulative sum so that each subsequent 
+                # array position is the netx step
+                moves = np.cumsum(NNSTEPS[moves], axis = 0)
 
-                # pick one of the nearest neighbour sites to explore
-                moveDir = choice(self.nnsteps)
-                # and apply the selected move to position coordinate, pos
-                pos[0] += moveDir[0]
-                pos[1] += moveDir[1]
+                # add starting position to all of that
+                moves[:,0] += pos[0]
+                moves[:,1] += pos[1]
 
-                if not self.inCircle(pos):
-                    break
-                elif self.nnOccupied(pos):
-                    self.registerHit(pos)
-                    break
-        endtime = time.time()
-        print "Ran in time:", (endtime - starttime)
-        print "Maximum radius:", self.maxradius
+                # calculate distance to center for all the points
+                from_center = moves - L
+                distances_to_center = from_center[:,0]**2 + from_center[:,1]**2
+                alive = distances_to_center < self.deathradius ** 2
+                alive = np.minimum.accumulate(alive)
 
-    # use matplotlib to plot a heat map
-    # hotter colours mean newer parts of the fractal
-    def plotLattice(self):
+                particle_hits = self.hit_zone[moves[:,0], moves[:,1]]
 
-        # select only the interesting parts
-        M = self.maxradius
-        grph = self.L - M, self.L + M
+                if np.any(particle_hits):
+                    first_hit = particle_hits.nonzero()[0][0]
+                    if alive[first_hit]:
+                        pos = tuple(moves[first_hit])
+                        self.register_hit(pos)
+                        break
+                else:
+                    if np.all(alive):
+                        pos = tuple(moves[-1])
+                    else:
+                        break
 
-        # and plot
-        axis = arange(-M, M + 1)
-        pcolormesh(axis, axis, self.lattice[grph[0]:grph[1], grph[0]:grph[1]])
-        axes().set_aspect('equal', 'datalim')
-        show()
+NUMBER_PARTICLES = 10000
+def main():
 
-# run the main program
-model = dla(1000)
-model.main()
-model.plotLattice()
+    #np.random.seed(42)
+    simulation = Simulation(NUMBER_PARTICLES)
+    starttime = time.time()
+    print "Running", NUMBER_PARTICLES, "particles..."
+    simulation.run()
+    endtime = time.time()
+    print "Ran in time:", (endtime - starttime)
+    print "Maximum radius:", simulation.maxradius
+
+    ## select only the interesting parts
+    #M = simulation.maxradius
+    #grph = L - M, L + M
+
+    ## and plot
+    #axis = np.arange(-M, M + 1)
+    #pcolormesh(axis, axis, simulation.lattice[grph[0]:grph[1], grph[0]:grph[1]])
+    #axes().set_aspect('equal', 'datalim')
+    #show()
+
+if __name__ == '__main__':
+    main()
