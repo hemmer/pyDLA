@@ -31,5 +31,5 @@ This script requires the `NumPy` and `matplotlib` libraries to run. To install t
 Examples
 --------
 
-![Crystal Growing](/hemmer/pyDLA/raw/master/img/n50000.png) . 
-![Crystal Growing around a box](/hemmer/pyDLA/raw/master/img/n20000.png)
+![Crystal Growing](https://raw.githubusercontent.com/hemmer/pyDLA/master/img/n50000.png) . 
+![Crystal Growing around a box](https://raw.githubusercontent.com/hemmer/pyDLA/master/img//n20000.png)
